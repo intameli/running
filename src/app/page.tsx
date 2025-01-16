@@ -6,15 +6,34 @@ export default async function Home() {
   // void api.post.getLatest.prefetch();
   const data = await api.post.getProfile();
 
+  let yearColour = "text-red-500";
+  if (data.ytd > 1000000) {
+    yearColour = "text-green-500";
+  }
+
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center gap-9">
-        <div className="pb-5 pt-10 text-7xl">Jacob has run</div>
-        <div className="text-5xl">
-          {(data.week / 1000).toFixed(2)} km since week start
-        </div>
-        <div className="text-5xl">
-          {(data.ytd / 1000).toFixed(2)} km since year start
+      <main className="flex justify-center p-1">
+        <div className="flex min-h-screen max-w-2xl flex-col items-start gap-3">
+          <div className="pt-3 text-3xl">Jacob&apos;s year in running</div>
+          --------------------------------------
+          <div className="text-2xl">
+            <span className={yearColour}>{Math.floor(data.ytd / 1000)}</span>
+            /1000 km since year start
+          </div>
+          --------------------------------------
+          {data.weeks.map((week, i) => {
+            let colour = "text-red-500";
+            if (week.total > 20000) {
+              colour = "text-green-500";
+            }
+            return (
+              <div className="text-2xl" key={week.no}>
+                <span className={colour}>{Math.floor(week.total / 1000)}</span>
+                /20 km - {i === 0 ? "Current week" : "Week " + week.no}
+              </div>
+            );
+          })}
         </div>
       </main>
     </HydrateClient>

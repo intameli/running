@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import axios, { type AxiosResponse } from "axios";
 
@@ -8,34 +7,34 @@ type TokenResponse = {
   refresh_token: string;
 };
 
-type Profile = {
-  ytd_run_totals: {
-    count: number;
-    distance: number;
-  };
-};
-
 type Activity = {
   distance: number;
   type: string;
+  start_date: string;
 };
 
-function getPreviousMondayEpoch() {
-  // Get the current time in your timezone (+10)
-  const now = DateTime.now().setZone("Australia/Brisbane"); // Use IANA timezone name
+type Weeks = {
+  start: number;
+  end: number;
+  no: number;
+  runs: Activity[];
+  total: number;
+};
 
-  // Find the most recent Monday
-  let monday = now;
-  while (monday.weekday !== 1) {
-    // Monday is 1 in Luxon
-    monday = monday.minus({ days: 1 });
+function getYearStart() {
+  const now = new Date();
+  const date = new Date("1/1/" + now.getFullYear());
+  // returns date as seconds since epoc
+  return Math.floor(date.getTime() / 1000);
+}
+
+function getFirstMonday() {
+  const now = new Date();
+  const date = new Date("1/1/" + now.getFullYear());
+  while (date.getDay() != 1) {
+    date.setDate(date.getDate() + 1);
   }
-
-  // Set the time to midnight (00:00:00)
-  monday = monday.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-
-  // Get the epoch timestamp in seconds
-  return monday.toSeconds();
+  return date.getTime();
 }
 
 export const postRouter = createTRPCRouter({
@@ -43,7 +42,10 @@ export const postRouter = createTRPCRouter({
     try {
       const info = await ctx.db.post.findFirst();
       let accessToken = info?.access_token;
-      if (info?.expires_at && info.expires_at >= Date.now()) {
+      if (!info) {
+        throw new Error("empty db");
+      }
+      if (info.expires_at * BigInt(1000) <= BigInt(Date.now())) {
         const firstPart = `https://www.strava.com/api/v3/oauth/token?client_id=${process.env.CLIENT_ID}&client_secret=${process.env.CLIENT_SECRET}&grant_type=refresh_token&refresh_token=`;
         const url = firstPart + info?.refresh_token;
         const response: AxiosResponse<TokenResponse> = await axios.post(url);
@@ -59,18 +61,9 @@ export const postRouter = createTRPCRouter({
           },
         });
       }
-
-      const response2: AxiosResponse<Profile> = await axios.get(
-        "https://www.strava.com/api/v3/athletes/151370251/stats",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
       const activities: AxiosResponse<Activity[]> = await axios.get(
         "https://www.strava.com/api/v3/athlete/activities?after=" +
-          getPreviousMondayEpoch() +
+          getYearStart() +
           "&per_page=200",
         {
           headers: {
@@ -78,19 +71,50 @@ export const postRouter = createTRPCRouter({
           },
         },
       );
-      let total = 0;
+      let year_total = 0;
       for (const activity of activities.data) {
         if (activity.type === "Run") {
-          total += activity.distance;
-          console.log(activity.distance);
+          year_total += activity.distance;
         }
       }
+
+      const weeks: Weeks[] = [];
+      let startDate = getFirstMonday();
+      let endDate = 0;
+      for (let i = 1; i < 53; i++) {
+        if (startDate > Date.now()) {
+          break;
+        }
+        endDate = startDate + 7 * 24 * 60 * 60 * 1000;
+        weeks.push({
+          start: startDate,
+          end: endDate,
+          no: i,
+          runs: [],
+          total: 0,
+        });
+        startDate = endDate;
+      }
+
+      for (const activity of activities.data) {
+        const date = new Date(activity.start_date);
+        for (const week of weeks) {
+          if (week.end > date.getTime() && date.getTime() > week.start) {
+            week.runs.push(activity);
+            week.total += activity.distance;
+          }
+        }
+      }
+      weeks.reverse();
+      console.log(weeks);
+
       return {
-        ytd: response2.data.ytd_run_totals.distance,
-        week: total,
+        ytd: year_total,
+        weeks: weeks,
       };
     } catch (error) {
       console.error("Error calling external API:", error);
+      console.log(error);
       throw new Error("Failed to fetch external API data");
     }
   }),
