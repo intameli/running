@@ -13,7 +13,7 @@ type Activity = {
   start_date: string;
 };
 
-type Weeks = {
+export type Weeks = {
   start: number;
   end: number;
   no: number;
@@ -60,7 +60,9 @@ export const postRouter = createTRPCRouter({
             expires_at: response.data.expires_at,
           },
         });
+        console.log("------ access token: " + response.data.access_token);
       }
+      console.log(accessToken);
       const activities: AxiosResponse<Activity[]> = await axios.get(
         "https://www.strava.com/api/v3/athlete/activities?after=" +
           getYearStart() +
