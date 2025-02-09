@@ -83,8 +83,14 @@ export const postRouter = createTRPCRouter({
       const weeks: Weeks[] = [];
       let startDate = getFirstMonday();
       let endDate = 0;
+
+      const utcDate = new Date("2025-02-10T12:00:00Z");
+      const utcEpoch = utcDate.getTime(); // in milliseconds
+      const brisbaneOffset = 10 * 60 * 60 * 1000; // UTC +10:00
+      const brisbaneEpoch = utcEpoch + brisbaneOffset;
+
       for (let i = 1; i < 53; i++) {
-        if (startDate > Date.now()) {
+        if (startDate > brisbaneEpoch) {
           break;
         }
         endDate = startDate + 7 * 24 * 60 * 60 * 1000;
@@ -108,7 +114,7 @@ export const postRouter = createTRPCRouter({
         }
       }
       weeks.reverse();
-      console.log(weeks);
+      // console.log(weeks);
 
       return {
         ytd: year_total,

@@ -1,5 +1,5 @@
 import { api, HydrateClient } from "~/trpc/server";
-import { Weeks } from "~/server/api/routers/post";
+import type { Weeks } from "~/server/api/routers/post";
 
 export default async function Home() {
   // const hello = await api.post.hello({ text: "from tRPC" });
