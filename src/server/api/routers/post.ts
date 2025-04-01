@@ -84,7 +84,7 @@ export const postRouter = createTRPCRouter({
       let startDate = getFirstMonday();
       let endDate = 0;
 
-      const utcDate = new Date("2025-02-10T12:00:00Z");
+      const utcDate = new Date();
       const utcEpoch = utcDate.getTime(); // in milliseconds
       const brisbaneOffset = 10 * 60 * 60 * 1000; // UTC +10:00
       const brisbaneEpoch = utcEpoch + brisbaneOffset;
