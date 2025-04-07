@@ -45,6 +45,7 @@ export const postRouter = createTRPCRouter({
       if (!info) {
         throw new Error("empty db");
       }
+
       if (info.expires_at * BigInt(1000) <= BigInt(Date.now())) {
         const firstPart = `https://www.strava.com/api/v3/oauth/token?client_id=${process.env.CLIENT_ID}&client_secret=${process.env.CLIENT_SECRET}&grant_type=refresh_token&refresh_token=`;
         const url = firstPart + info?.refresh_token;
