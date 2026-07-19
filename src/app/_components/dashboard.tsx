@@ -1,5 +1,45 @@
 import type { ReactNode } from "react";
 
+function PixelAccent() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="mb-3 h-7 w-[120px]"
+      focusable="false"
+      shapeRendering="crispEdges"
+      viewBox="0 0 120 28"
+    >
+      <g className="fill-cyan-300">
+        <rect height="4" opacity="0.35" width="12" x="0" y="20" />
+        <rect height="4" opacity="0.55" width="12" x="8" y="16" />
+        <rect height="4" opacity="0.75" width="12" x="16" y="12" />
+        <rect height="4" width="12" x="24" y="8" />
+        <rect height="4" opacity="0.75" width="12" x="32" y="12" />
+        <rect height="4" opacity="0.55" width="12" x="40" y="16" />
+        <rect height="4" opacity="0.35" width="12" x="48" y="20" />
+        <rect height="4" opacity="0.5" width="12" x="56" y="20" />
+        <rect height="4" opacity="0.7" width="12" x="64" y="16" />
+        <rect height="4" width="12" x="72" y="12" />
+        <rect height="4" opacity="0.7" width="12" x="80" y="16" />
+        <rect height="4" opacity="0.5" width="12" x="88" y="20" />
+      </g>
+      <g className="fill-orange-400">
+        <rect height="4" width="4" x="104" y="0" />
+        <rect height="4" width="12" x="100" y="4" />
+        <rect height="4" width="4" x="104" y="8" />
+      </g>
+      <g className="fill-slate-600">
+        <rect height="4" width="20" x="0" y="24" />
+        <rect height="4" width="32" x="24" y="24" />
+        <rect height="4" width="20" x="60" y="24" />
+        <rect height="4" width="16" x="84" y="24" />
+        <rect height="4" width="12" x="108" y="24" />
+      </g>
+      <rect className="fill-orange-100" height="4" width="4" x="104" y="4" />
+    </svg>
+  );
+}
+
 export function DashboardShell({
   children,
   description = "Progress toward a 1,000 km year, one 20 km week at a time.",
@@ -13,9 +53,7 @@ export function DashboardShell({
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-3xl">
         <header className="mb-8 sm:mb-10">
-          <p className="mb-2 text-sm uppercase tracking-[0.24em] text-cyan-300">
-            Year in motion
-          </p>
+          <PixelAccent />
           <h1 className="text-4xl leading-tight text-white sm:text-5xl">
             {title}
           </h1>
