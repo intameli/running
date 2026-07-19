@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DashboardShell } from "~/app/_components/dashboard";
+import { OpenStravaInBrowserButton } from "~/app/_components/open-strava-in-browser-button";
 import { StravaAuthorizeLink } from "~/app/_components/strava-authorize-link";
 
 export default function SwitchStravaAccount() {
@@ -27,15 +28,7 @@ export default function SwitchStravaAccount() {
                 Open Strava in a new tab, use the profile menu to log out, then
                 return to this tab.
               </p>
-              <a
-                className="mt-3 inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-orange-400 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-                href="https://www.strava.com/dashboard"
-                rel="noreferrer"
-                target="_blank"
-              >
-                Open Strava
-                <span aria-hidden="true">&nbsp;↗</span>
-              </a>
+              <OpenStravaInBrowserButton />
             </div>
           </li>
 
