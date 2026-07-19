@@ -6,6 +6,7 @@ import {
   DashboardShell,
   RunningStatsSkeleton,
 } from "~/app/_components/dashboard";
+import { StravaAuthorizeLink } from "~/app/_components/strava-authorize-link";
 import {
   getRunningProfile,
   getStravaViewerRunningProfile,
@@ -377,13 +378,7 @@ function AccountSwitcher({ isViewer }: { isViewer: boolean }) {
               </form>
             </>
           ) : (
-            <Link
-              className="inline-flex items-center justify-center rounded-lg bg-[#fc4c02] px-4 py-2 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#e34402] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-              href="/api/strava/authorize"
-              prefetch={false}
-            >
-              View my Strava stats
-            </Link>
+            <StravaAuthorizeLink />
           )}
         </div>
       </div>
