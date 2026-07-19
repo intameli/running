@@ -20,17 +20,8 @@ export default function SwitchStravaAccount() {
               <h2 className="text-lg font-normal text-white">
                 Log out of Strava
               </h2>
-              <div className="mt-3 rounded-xl border border-orange-400/30 bg-orange-400/10 p-4">
-                <p className="text-xl font-normal leading-7 text-orange-100 sm:text-2xl sm:leading-8">
-                  On iPhone, you must open this in a new tab.
-                </p>
-                <p className="mt-2 text-sm leading-5 text-orange-100/70">
-                  Press and hold “Log out of Strava”, then tap “Open in New
-                  Tab”.
-                </p>
-              </div>
-              <p className="mt-3 text-sm leading-5 text-slate-400">
-                The new tab will sign you out. Then come back here.
+              <p className="mt-1 text-sm leading-5 text-slate-400">
+                This will sign you out of Strava. Then come back here.
               </p>
               <OpenStravaInBrowserButton />
             </div>
