@@ -49,9 +49,7 @@ type HomeProps = {
 };
 
 const stravaNotices: Record<string, string> = {
-  connected: "Your Strava runs are now shown for this browser session.",
   denied: "Strava access was cancelled. Jacob's stats are still shown.",
-  disconnected: "The temporary Strava connection has been removed.",
   error: "Strava couldn't connect just now. Please try again.",
   invalid: "That Strava sign-in link expired. Please start again.",
   scope: "Activity access is needed to calculate your running progress.",

@@ -76,10 +76,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) return response;
 
     const token = tokenResponseSchema.parse(await tokenResponse.json());
-    response.headers.set(
-      "Location",
-      new URL("/?strava=connected", request.url).toString(),
-    );
+    response.headers.set("Location", new URL("/", request.url).toString());
     response.cookies.set(
       STRAVA_SESSION_COOKIE,
       createStravaViewerSession({
