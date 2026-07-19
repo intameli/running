@@ -1,3 +1,12 @@
+import {
+  DashboardShell,
+  RunningStatsSkeleton,
+} from "~/app/_components/dashboard";
+
 export default function Loading() {
-  return <div className="p-1">Loading...</div>;
+  return (
+    <DashboardShell>
+      <RunningStatsSkeleton />
+    </DashboardShell>
+  );
 }

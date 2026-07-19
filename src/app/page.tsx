@@ -1,103 +1,223 @@
-import { api, HydrateClient } from "~/trpc/server";
-import type { Weeks } from "~/server/api/routers/post";
+import { Suspense } from "react";
 
-export default async function Home() {
-  // const hello = await api.post.hello({ text: "from tRPC" });
+import {
+  DashboardShell,
+  RunningStatsSkeleton,
+} from "~/app/_components/dashboard";
+import { getRunningProfile, type RunningWeek } from "~/server/running-profile";
 
-  // void api.post.getLatest.prefetch();
-  const data = await api.post.getProfile();
+export const dynamic = "force-dynamic";
 
-  let yearColour = "text-red-500";
-  if (data.ytd > 1000000) {
-    yearColour = "text-green-500";
+const YEAR_GOAL_METRES = 1_000_000;
+const WEEK_GOAL_METRES = 20_000;
+const BRISBANE_TIME_ZONE = "Australia/Brisbane";
+
+const distanceFormatter = new Intl.NumberFormat("en-AU", {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 0,
+});
+
+const preciseDistanceFormatter = new Intl.NumberFormat("en-AU", {
+  maximumFractionDigits: 3,
+  minimumFractionDigits: 0,
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-AU", {
+  day: "numeric",
+  month: "short",
+  timeZone: BRISBANE_TIME_ZONE,
+});
+
+function formatDistance(metres: number, precise = false) {
+  const formatter = precise ? preciseDistanceFormatter : distanceFormatter;
+  return `${formatter.format(metres / 1000)} km`;
+}
+
+function formatGoalDistance(metres: number, goal: number) {
+  const isNearGoal = metres !== goal && Math.abs(goal - metres) < 1_000;
+  return formatDistance(metres, isNearGoal);
+}
+
+function formatDifference(metres: number) {
+  if (metres < 1_000) {
+    return `${Math.max(1, Math.ceil(metres))} m`;
   }
 
+  return formatDistance(metres);
+}
+
+function getProgress(total: number, goal: number) {
+  return Math.min(100, Math.max(0, (total / goal) * 100));
+}
+
+function GoalProgress({
+  goal,
+  label,
+  total,
+}: {
+  goal: number;
+  label: string;
+  total: number;
+}) {
+  const goalMet = total >= goal;
+  const progress = getProgress(total, goal);
+
   return (
-    <HydrateClient>
-      <main className="flex justify-center p-1">
-        <div className="flex min-h-screen max-w-2xl flex-col items-start gap-3">
-          <div className="pt-3 text-3xl">Jacob&apos;s year in running</div>
-          --------------------------------------
-          <div className="text-2xl">
-            <span className={yearColour}>
-              <HoverBoxNum number={data.ytd} />
-            </span>
-            /1000 km since year start
-          </div>
-          --------------------------------------
-          {data.weeks.map((week, i) => {
-            let colour = "text-red-500";
-            if (week.total > 20000) {
-              colour = "text-green-500";
-            }
-            return (
-              <div className="text-2xl" key={week.no}>
-                <span className={colour}>
-                  <HoverBoxNum number={week.total} />
-                </span>
-                /20 km - <HoverBoxDate week={week} index={i} />
-              </div>
-            );
-          })}
-        </div>
-      </main>
-    </HydrateClient>
+    <>
+      <div
+        aria-label={`${label}: ${formatGoalDistance(total, goal)} of ${formatDistance(goal)}`}
+        aria-valuemax={goal / 1000}
+        aria-valuemin={0}
+        aria-valuenow={Number((Math.min(total, goal) / 1000).toFixed(1))}
+        className="h-2.5 overflow-hidden rounded-full bg-slate-800"
+        role="progressbar"
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ${
+            goalMet ? "bg-emerald-400" : "bg-cyan-400"
+          }`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <p className="mt-2 text-xs text-slate-400">
+        {goalMet
+          ? total === goal
+            ? "Goal reached"
+            : `${formatDifference(total - goal)} beyond the goal`
+          : `${formatDifference(goal - total)} to go`}
+      </p>
+    </>
   );
 }
 
-type HoverBoxNumProps = {
-  number: number;
-};
-
-const HoverBoxNum: React.FC<HoverBoxNumProps> = ({ number }) => {
-  return (
-    <div className="group relative inline-block">
-      {/* The text that triggers the hover box */}
-      <span className="cursor-pointer">{Math.floor(number / 1000)}</span>
-
-      {/* The hover box */}
-      <div
-        className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 transform rounded bg-gray-800 px-3 py-1 text-sm text-white shadow-lg transition-all group-hover:block"
-        style={{ whiteSpace: "nowrap" }}
-      >
-        {(number / 1000).toFixed(2)}
-      </div>
-    </div>
-  );
-};
-
-type HoverBoxDateProps = {
-  week: Weeks;
-  index: number;
-};
-
-const HoverBoxDate: React.FC<HoverBoxDateProps> = ({ week, index }) => {
-  const start = new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  }).format(new Date(week.start));
-
-  const end = new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  }).format(new Date(week.end - 1)); // -1 because end is first second of the next week
+function WeekRow({
+  isCurrent,
+  week,
+}: {
+  isCurrent: boolean;
+  week: RunningWeek;
+}) {
+  const goalMet = week.total >= WEEK_GOAL_METRES;
+  const start = dateFormatter.format(new Date(week.start));
+  const end = dateFormatter.format(new Date(week.end - 1));
+  const runLabel = `${week.runCount} ${week.runCount === 1 ? "run" : "runs"}`;
 
   return (
-    <div className="group relative inline-block">
-      {/* The text that triggers the hover box */}
-      <span className="cursor-pointer">
-        {index === 0 ? "Current week" : "Week " + week.no}
-      </span>
-
-      {/* The hover box */}
-      <div
-        className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 transform rounded bg-gray-800 px-3 py-1 text-sm text-white shadow-lg transition-all group-hover:block"
-        style={{ whiteSpace: "nowrap" }}
-      >
-        {start} - {end}
+    <li
+      aria-current={isCurrent ? "date" : undefined}
+      className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-colors hover:border-slate-700"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg text-white">
+              {isCurrent ? "Current week" : `Week ${week.no}`}
+            </h3>
+            <span
+              className={`rounded-full px-2 py-0.5 font-sans text-xs font-semibold ${
+                goalMet
+                  ? "bg-emerald-400/15 text-emerald-300"
+                  : "bg-slate-800 text-slate-300"
+              }`}
+            >
+              {goalMet ? "Goal met" : runLabel}
+            </span>
+          </div>
+          <p className="mt-1 font-sans text-sm text-slate-400">
+            <time dateTime={new Date(week.start).toISOString()}>{start}</time>
+            {" – "}
+            <time dateTime={new Date(week.end - 1).toISOString()}>{end}</time>
+            {goalMet ? ` · ${runLabel}` : null}
+          </p>
+        </div>
+        <p className="shrink-0 text-xl tabular-nums text-white sm:text-2xl">
+          {formatGoalDistance(week.total, WEEK_GOAL_METRES)}
+        </p>
       </div>
+      <div className="mt-4">
+        <GoalProgress
+          goal={WEEK_GOAL_METRES}
+          label={`${isCurrent ? "Current week" : `Week ${week.no}`} progress`}
+          total={week.total}
+        />
+      </div>
+    </li>
+  );
+}
+
+async function RunningStats() {
+  const data = await getRunningProfile();
+  const yearGoalMet = data.ytd >= YEAR_GOAL_METRES;
+
+  return (
+    <div className="space-y-8">
+      <section
+        aria-labelledby="year-progress-title"
+        className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/20 sm:p-6"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2
+              className="font-sans text-sm font-semibold uppercase tracking-wider text-slate-400"
+              id="year-progress-title"
+            >
+              Year progress
+            </h2>
+            <p className="mt-2 text-4xl tabular-nums text-white sm:text-5xl">
+              {formatGoalDistance(data.ytd, YEAR_GOAL_METRES)}
+            </p>
+          </div>
+          <span
+            className={`rounded-full px-3 py-1 font-sans text-sm font-semibold ${
+              yearGoalMet
+                ? "bg-emerald-400/15 text-emerald-300"
+                : "bg-cyan-400/15 text-cyan-300"
+            }`}
+          >
+            {yearGoalMet ? "Goal met" : "1,000 km goal"}
+          </span>
+        </div>
+        <div className="mt-5">
+          <GoalProgress
+            goal={YEAR_GOAL_METRES}
+            label="Year progress"
+            total={data.ytd}
+          />
+        </div>
+      </section>
+
+      <section aria-labelledby="weekly-progress-title">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <h2 className="text-2xl text-white" id="weekly-progress-title">
+            Weekly runs
+          </h2>
+          <p className="font-sans text-sm text-slate-400">
+            20 km goal · Monday–Sunday
+          </p>
+        </div>
+
+        {data.weeks.length > 0 ? (
+          <ol className="space-y-3">
+            {data.weeks.map((week, index) => (
+              <WeekRow isCurrent={index === 0} key={week.start} week={week} />
+            ))}
+          </ol>
+        ) : (
+          <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 font-sans text-slate-300">
+            Weekly tracking starts on the first Monday of the year.
+          </p>
+        )}
+      </section>
     </div>
   );
-};
+}
+
+export default function Home() {
+  return (
+    <DashboardShell>
+      <Suspense fallback={<RunningStatsSkeleton />}>
+        <RunningStats />
+      </Suspense>
+    </DashboardShell>
+  );
+}
