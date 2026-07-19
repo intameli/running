@@ -6,6 +6,8 @@ import {
   buildWeeks,
   getBrisbaneYear,
   getYearStart,
+  hasMetDistanceGoal,
+  roundMetresToTenthKilometre,
 } from "../src/server/running-profile-logic.js";
 
 test("the running year rolls over at midnight in Brisbane", () => {
@@ -129,4 +131,16 @@ test("annual totals include the Brisbane year start and exclude its end", () => 
   assert.equal(profile.ytd, 1_000);
   assert.equal(profile.weeks.at(-1)?.total, 1_000);
   assert.equal(profile.weeks[0]?.total, 2_000);
+});
+
+test("weekly goals use normal rounding to one decimal place", () => {
+  assert.equal(roundMetresToTenthKilometre(19_900), 19_900);
+  assert.equal(roundMetresToTenthKilometre(19_949.999), 19_900);
+  assert.equal(roundMetresToTenthKilometre(19_950), 20_000);
+  assert.equal(roundMetresToTenthKilometre(20_049.999), 20_000);
+  assert.equal(roundMetresToTenthKilometre(20_050), 20_100);
+
+  assert.equal(hasMetDistanceGoal(19_900, 20_000), false);
+  assert.equal(hasMetDistanceGoal(19_949.999, 20_000), false);
+  assert.equal(hasMetDistanceGoal(19_950, 20_000), true);
 });

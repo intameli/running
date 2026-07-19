@@ -9,6 +9,8 @@ import { getRunningProfile, type RunningWeek } from "~/server/running-profile";
 import {
   EARLIEST_RUNNING_YEAR,
   getBrisbaneYear,
+  hasMetDistanceGoal,
+  roundMetresToTenthKilometre,
 } from "~/server/running-profile-logic";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +21,6 @@ const BRISBANE_TIME_ZONE = "Australia/Brisbane";
 
 const distanceFormatter = new Intl.NumberFormat("en-AU", {
   maximumFractionDigits: 1,
-  minimumFractionDigits: 0,
-});
-
-const preciseDistanceFormatter = new Intl.NumberFormat("en-AU", {
-  maximumFractionDigits: 3,
   minimumFractionDigits: 0,
 });
 
@@ -124,22 +121,9 @@ function YearNavigation({
   );
 }
 
-function formatDistance(metres: number, precise = false) {
-  const formatter = precise ? preciseDistanceFormatter : distanceFormatter;
-  return `${formatter.format(metres / 1000)} km`;
-}
-
-function formatGoalDistance(metres: number, goal: number) {
-  const isNearGoal = metres !== goal && Math.abs(goal - metres) < 1_000;
-  return formatDistance(metres, isNearGoal);
-}
-
-function formatDifference(metres: number) {
-  if (metres < 1_000) {
-    return `${Math.max(1, Math.ceil(metres))} m`;
-  }
-
-  return formatDistance(metres);
+function formatDistance(metres: number) {
+  const roundedMetres = roundMetresToTenthKilometre(metres);
+  return `${distanceFormatter.format(roundedMetres / 1000)} km`;
 }
 
 function getProgress(total: number, goal: number) {
@@ -155,16 +139,17 @@ function GoalProgress({
   label: string;
   total: number;
 }) {
-  const goalMet = total >= goal;
-  const progress = getProgress(total, goal);
+  const roundedTotal = roundMetresToTenthKilometre(total);
+  const goalMet = roundedTotal >= goal;
+  const progress = getProgress(roundedTotal, goal);
 
   return (
     <>
       <div
-        aria-label={`${label}: ${formatGoalDistance(total, goal)} of ${formatDistance(goal)}`}
+        aria-label={`${label}: ${formatDistance(total)} of ${formatDistance(goal)}`}
         aria-valuemax={goal / 1000}
         aria-valuemin={0}
-        aria-valuenow={Number((Math.min(total, goal) / 1000).toFixed(1))}
+        aria-valuenow={Math.min(roundedTotal, goal) / 1000}
         className="h-2.5 overflow-hidden rounded-full bg-slate-800"
         role="progressbar"
       >
@@ -177,10 +162,10 @@ function GoalProgress({
       </div>
       <p className="mt-2 text-xs text-slate-400">
         {goalMet
-          ? total === goal
+          ? roundedTotal === goal
             ? "Goal reached"
-            : `${formatDifference(total - goal)} beyond the goal`
-          : `${formatDifference(goal - total)} to go`}
+            : `${formatDistance(roundedTotal - goal)} beyond the goal`
+          : `${formatDistance(goal - roundedTotal)} to go`}
       </p>
     </>
   );
@@ -193,7 +178,7 @@ function WeekRow({
   isCurrent: boolean;
   week: RunningWeek;
 }) {
-  const goalMet = week.total >= WEEK_GOAL_METRES;
+  const goalMet = hasMetDistanceGoal(week.total, WEEK_GOAL_METRES);
   const start = dateFormatter.format(new Date(week.start));
   const end = dateFormatter.format(new Date(week.end - 1));
   const runLabel = `${week.runCount} ${week.runCount === 1 ? "run" : "runs"}`;
@@ -227,7 +212,7 @@ function WeekRow({
           </p>
         </div>
         <p className="shrink-0 text-xl tabular-nums text-white sm:text-2xl">
-          {formatGoalDistance(week.total, WEEK_GOAL_METRES)}
+          {formatDistance(week.total)}
         </p>
       </div>
       <div className="mt-4">
@@ -249,7 +234,7 @@ async function RunningStats({
   year: number;
 }) {
   const data = await getRunningProfile(year);
-  const yearGoalMet = data.ytd >= YEAR_GOAL_METRES;
+  const yearGoalMet = hasMetDistanceGoal(data.ytd, YEAR_GOAL_METRES);
 
   return (
     <div className="space-y-8">
@@ -266,7 +251,7 @@ async function RunningStats({
               {year} progress
             </h2>
             <p className="mt-2 text-4xl tabular-nums text-white sm:text-5xl">
-              {formatGoalDistance(data.ytd, YEAR_GOAL_METRES)}
+              {formatDistance(data.ytd)}
             </p>
           </div>
           <span

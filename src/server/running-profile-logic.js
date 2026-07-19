@@ -1,4 +1,5 @@
 const BRISBANE_OFFSET_MS = 10 * 60 * 60 * 1000;
+const DISPLAY_DISTANCE_STEP_METRES = 100;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const EARLIEST_RUNNING_YEAR = 2009;
@@ -31,6 +32,26 @@ export function getBrisbaneYear(now) {
  */
 export function getYearStart(year) {
   return Date.UTC(year, 0, 1) - BRISBANE_OFFSET_MS;
+}
+
+/**
+ * Rounds a distance to the nearest 0.1 km using standard half-up rounding.
+ *
+ * @param {number} metres
+ */
+export function roundMetresToTenthKilometre(metres) {
+  return (
+    Math.round(metres / DISPLAY_DISTANCE_STEP_METRES) *
+    DISPLAY_DISTANCE_STEP_METRES
+  );
+}
+
+/**
+ * @param {number} total
+ * @param {number} goal
+ */
+export function hasMetDistanceGoal(total, goal) {
+  return roundMetresToTenthKilometre(total) >= goal;
 }
 
 /**
