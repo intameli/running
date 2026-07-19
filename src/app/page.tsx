@@ -358,18 +358,16 @@ function AccountSwitcher({ isViewer }: { isViewer: boolean }) {
         </p>
 
         <div className="mt-3 flex shrink-0 flex-wrap gap-3 sm:mt-0 sm:justify-end">
+          <StravaSwitchForm />
           {isViewer ? (
-            <>
-              <StravaSwitchForm />
-              <form action="/api/strava/disconnect" method="post">
-                <button
-                  className="inline-flex items-center justify-center rounded-lg bg-slate-200 px-4 py-2 font-sans text-sm font-semibold text-slate-950 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200"
-                  type="submit"
-                >
-                  Back to Jacob
-                </button>
-              </form>
-            </>
+            <form action="/api/strava/disconnect" method="post">
+              <button
+                className="inline-flex items-center justify-center rounded-lg bg-slate-200 px-4 py-2 font-sans text-sm font-semibold text-slate-950 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200"
+                type="submit"
+              >
+                Back to Jacob
+              </button>
+            </form>
           ) : (
             <StravaAuthorizeLink />
           )}
