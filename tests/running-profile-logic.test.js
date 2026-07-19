@@ -80,3 +80,53 @@ test("week generation supports a 53rd Monday", () => {
   assert.equal(weeks.at(-1)?.no, 53);
   assert.equal(weeks.at(-1)?.start, Date.parse("2024-12-29T14:00:00.000Z"));
 });
+
+test("historical totals stay within the year while the final week can cross it", () => {
+  const profile = aggregateRuns(
+    [
+      {
+        distance: 1_000,
+        start_date: "2024-12-30T00:00:00.000Z",
+        type: "Run",
+      },
+      {
+        distance: 2_000,
+        start_date: "2025-01-01T00:00:00.000Z",
+        type: "Run",
+      },
+    ],
+    new Date("2024-12-31T13:59:59.999Z"),
+  );
+
+  assert.equal(profile.ytd, 1_000);
+  assert.deepEqual(
+    {
+      no: profile.weeks[0]?.no,
+      runCount: profile.weeks[0]?.runCount,
+      total: profile.weeks[0]?.total,
+    },
+    { no: 53, runCount: 2, total: 3_000 },
+  );
+});
+
+test("annual totals include the Brisbane year start and exclude its end", () => {
+  const profile = aggregateRuns(
+    [
+      {
+        distance: 1_000,
+        start_date: new Date(getYearStart(2024)).toISOString(),
+        type: "Run",
+      },
+      {
+        distance: 2_000,
+        start_date: new Date(getYearStart(2025)).toISOString(),
+        type: "Run",
+      },
+    ],
+    new Date(getYearStart(2025) - 1),
+  );
+
+  assert.equal(profile.ytd, 1_000);
+  assert.equal(profile.weeks.at(-1)?.total, 1_000);
+  assert.equal(profile.weeks[0]?.total, 2_000);
+});

@@ -7,6 +7,8 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 import {
   aggregateRuns,
+  buildWeeks,
+  EARLIEST_RUNNING_YEAR,
   getBrisbaneYear,
   getYearStart,
 } from "~/server/running-profile-logic";
@@ -124,12 +126,17 @@ async function getAccessToken() {
   return credentials.access_token;
 }
 
-async function fetchActivities(accessToken: string, after: number) {
+async function fetchActivities(
+  accessToken: string,
+  after: number,
+  before: number,
+) {
   const activities: Activity[] = [];
 
   for (let page = 1; ; page += 1) {
     const url = new URL(`${STRAVA_API_URL}/athlete/activities`);
     url.searchParams.set("after", after.toString());
+    url.searchParams.set("before", before.toString());
     url.searchParams.set("page", page.toString());
     url.searchParams.set("per_page", PAGE_SIZE.toString());
 
@@ -152,20 +159,36 @@ async function fetchActivities(accessToken: string, after: number) {
   }
 }
 
-async function fetchRunningProfile() {
+async function fetchRunningProfile(requestedYear?: number) {
   const now = new Date();
-  const year = getBrisbaneYear(now);
+  const currentYear = getBrisbaneYear(now);
+  const year = requestedYear ?? currentYear;
+
+  if (
+    !Number.isInteger(year) ||
+    year < EARLIEST_RUNNING_YEAR ||
+    year > currentYear
+  ) {
+    throw new RangeError(
+      `Running year ${year} is outside the available range.`,
+    );
+  }
+
+  const referenceDate =
+    year === currentYear ? now : new Date(getYearStart(year + 1) - 1);
+  const finalWeekEnd = buildWeeks(referenceDate, year).at(-1)?.end;
   const accessToken = await getAccessToken();
   const activities = await fetchActivities(
     accessToken,
     Math.floor(getYearStart(year) / 1000) - 1,
+    Math.floor((finalWeekEnd ?? getYearStart(year + 1)) / 1000),
   );
 
-  return aggregateRuns(activities, now);
+  return aggregateRuns(activities, referenceDate);
 }
 
 export const getRunningProfile = unstable_cache(
   fetchRunningProfile,
-  ["running-profile"],
+  ["running-profile-by-year"],
   { revalidate: 300 },
 );

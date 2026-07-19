@@ -1,6 +1,8 @@
 const BRISBANE_OFFSET_MS = 10 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+export const EARLIEST_RUNNING_YEAR = 2009;
+
 /**
  * @typedef {object} Activity
  * @property {number} distance
@@ -73,6 +75,7 @@ export function buildWeeks(now, year) {
 export function aggregateRuns(activities, now) {
   const year = getBrisbaneYear(now);
   const yearStart = getYearStart(year);
+  const yearEnd = getYearStart(year + 1);
   const weeks = buildWeeks(now, year);
   const firstWeekStart = weeks[0]?.start;
   let ytd = 0;
@@ -81,9 +84,11 @@ export function aggregateRuns(activities, now) {
     if (activity.type !== "Run") continue;
 
     const startedAt = new Date(activity.start_date).getTime();
-    if (!Number.isFinite(startedAt) || startedAt < yearStart) continue;
+    if (!Number.isFinite(startedAt)) continue;
 
-    ytd += activity.distance;
+    if (startedAt >= yearStart && startedAt < yearEnd) {
+      ytd += activity.distance;
+    }
 
     if (firstWeekStart === undefined || startedAt < firstWeekStart) continue;
 
