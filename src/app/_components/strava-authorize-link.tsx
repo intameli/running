@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type MouseEvent } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 
-export function StravaAuthorizeLink() {
+export function StravaAuthorizeLink({
+  children = "View my Strava stats",
+}: {
+  children?: ReactNode;
+}) {
   const [isPending, setIsPending] = useState(false);
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -26,9 +30,7 @@ export function StravaAuthorizeLink() {
       onClick={handleClick}
       prefetch={false}
     >
-      <span className={isPending ? "invisible" : undefined}>
-        View my Strava stats
-      </span>
+      <span className={isPending ? "invisible" : undefined}>{children}</span>
       {isPending ? (
         <span
           aria-hidden="true"

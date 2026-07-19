@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   if (session) await revokeStravaAccessToken(session.accessToken);
 
   const response = NextResponse.redirect(
-    new URL("/?strava=disconnected", request.url),
+    new URL("/strava/switch", request.url),
     303,
   );
   response.headers.set("Cache-Control", "no-store");

@@ -22,7 +22,10 @@ read-only activity access. Guest access tokens are encrypted in an HTTP-only,
 browser-session cookie and are not written to the database. Refresh tokens are
 discarded, so the guest connection expires with the Strava access token (up to
 six hours) or when the browser session ends. “Back to Jacob” clears the cookie
-and asks Strava to revoke the temporary access.
+and asks Strava to revoke the temporary access. “Switch account” does the same,
+then guides the viewer through logging out of Strava before beginning a fresh
+OAuth request because Strava does not provide connected apps with an account
+chooser or browser logout API.
 
 ## Useful commands
 

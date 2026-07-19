@@ -7,6 +7,7 @@ import {
   RunningStatsSkeleton,
 } from "~/app/_components/dashboard";
 import { StravaAuthorizeLink } from "~/app/_components/strava-authorize-link";
+import { StravaSwitchForm } from "~/app/_components/strava-switch-form";
 import {
   getRunningProfile,
   getStravaViewerRunningProfile,
@@ -361,13 +362,7 @@ function AccountSwitcher({ isViewer }: { isViewer: boolean }) {
         <div className="mt-3 flex shrink-0 flex-wrap gap-3 sm:mt-0 sm:justify-end">
           {isViewer ? (
             <>
-              <Link
-                className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 font-sans text-sm font-semibold text-slate-200 transition-colors hover:border-orange-400 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-                href="/api/strava/authorize"
-                prefetch={false}
-              >
-                Switch account
-              </Link>
+              <StravaSwitchForm />
               <form action="/api/strava/disconnect" method="post">
                 <button
                   className="inline-flex items-center justify-center rounded-lg bg-slate-200 px-4 py-2 font-sans text-sm font-semibold text-slate-950 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200"
