@@ -1,17 +1,26 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 import {
   DashboardShell,
   RunningStatsSkeleton,
 } from "~/app/_components/dashboard";
-import { getRunningProfile, type RunningWeek } from "~/server/running-profile";
+import {
+  getRunningProfile,
+  getStravaViewerRunningProfile,
+  type RunningWeek,
+} from "~/server/running-profile";
 import {
   EARLIEST_RUNNING_YEAR,
   getBrisbaneYear,
   hasMetDistanceGoal,
   roundMetresToTenthKilometre,
 } from "~/server/running-profile-logic";
+import {
+  readStravaViewerSession,
+  STRAVA_SESSION_COOKIE,
+} from "~/server/strava-session";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +40,19 @@ const dateFormatter = new Intl.DateTimeFormat("en-AU", {
 });
 
 type HomeProps = {
-  searchParams: Promise<{ year?: string | string[] }>;
+  searchParams: Promise<{
+    strava?: string | string[];
+    year?: string | string[];
+  }>;
+};
+
+const stravaNotices: Record<string, string> = {
+  connected: "Your Strava runs are now shown for this browser session.",
+  denied: "Strava access was cancelled. Jacob's stats are still shown.",
+  disconnected: "The temporary Strava connection has been removed.",
+  error: "Strava couldn't connect just now. Please try again.",
+  invalid: "That Strava sign-in link expired. Please start again.",
+  scope: "Activity access is needed to calculate your running progress.",
 };
 
 function getSelectedYear(
@@ -228,12 +249,22 @@ function WeekRow({
 
 async function RunningStats({
   currentTime,
+  isViewer,
   year,
 }: {
   currentTime: number;
+  isViewer: boolean;
   year: number;
 }) {
-  const data = await getRunningProfile(year);
+  const viewer = isViewer ? await getViewerSession() : undefined;
+
+  if (isViewer && !viewer) {
+    throw new Error("The temporary Strava viewer session has expired.");
+  }
+
+  const data = viewer
+    ? await getStravaViewerRunningProfile(viewer.accessToken, year)
+    : await getRunningProfile(year);
   const yearGoalMet = hasMetDistanceGoal(data.ytd, YEAR_GOAL_METRES);
 
   return (
@@ -303,16 +334,101 @@ async function RunningStats({
   );
 }
 
+function AccountSwitcher({ isViewer }: { isViewer: boolean }) {
+  return (
+    <section
+      aria-label="Strava account"
+      className="mb-8 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:flex sm:items-center sm:justify-between sm:gap-5"
+    >
+      <div>
+        <p className="text-lg text-white">
+          {isViewer ? "Viewing your runs" : "See your own progress"}
+        </p>
+        <p className="mt-1 max-w-xl font-sans text-sm leading-5 text-slate-400">
+          {isViewer
+            ? "Your short-lived access token is encrypted in a browser-session cookie and is never saved to this app's database."
+            : "Temporarily grant read-only access to your activities, including private activities. Nothing is added to this app's database."}
+        </p>
+      </div>
+
+      <div className="mt-4 flex shrink-0 flex-wrap gap-3 sm:mt-0 sm:justify-end">
+        {isViewer ? (
+          <>
+            <Link
+              className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 font-sans text-sm font-semibold text-slate-200 transition-colors hover:border-orange-400 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+              href="/api/strava/authorize"
+              prefetch={false}
+            >
+              Switch account
+            </Link>
+            <form action="/api/strava/disconnect" method="post">
+              <button
+                className="inline-flex items-center justify-center rounded-lg bg-slate-200 px-4 py-2 font-sans text-sm font-semibold text-slate-950 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200"
+                type="submit"
+              >
+                Back to Jacob
+              </button>
+            </form>
+          </>
+        ) : (
+          <Link
+            className="inline-flex items-center justify-center rounded-lg bg-[#fc4c02] px-4 py-2 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#e34402] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+            href="/api/strava/authorize"
+            prefetch={false}
+          >
+            View my Strava stats
+          </Link>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function StravaNotice({ status }: { status?: string }) {
+  const message = status ? stravaNotices[status] : undefined;
+
+  return message ? (
+    <p
+      className="mb-5 rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 font-sans text-sm text-cyan-100"
+      role="status"
+    >
+      {message}
+    </p>
+  ) : null;
+}
+
+async function getViewerSession() {
+  const cookieStore = await cookies();
+
+  return readStravaViewerSession(cookieStore.get(STRAVA_SESSION_COOKIE)?.value);
+}
+
 export default async function Home({ searchParams }: HomeProps) {
   const now = new Date();
   const currentYear = getBrisbaneYear(now);
-  const year = getSelectedYear((await searchParams).year, currentYear);
+  const params = await searchParams;
+  const year = getSelectedYear(params.year, currentYear);
+  const viewer = await getViewerSession();
+  const isViewer = Boolean(viewer);
+  const rawStatus = Array.isArray(params.strava)
+    ? params.strava[0]
+    : params.strava;
+  const title = isViewer ? "Your year in running" : undefined;
 
   return (
-    <DashboardShell>
+    <DashboardShell title={title}>
+      <StravaNotice status={rawStatus} />
+      <AccountSwitcher isViewer={isViewer} />
       <YearNavigation currentYear={currentYear} year={year} />
-      <Suspense fallback={<RunningStatsSkeleton />} key={year}>
-        <RunningStats currentTime={now.getTime()} year={year} />
+      <Suspense
+        fallback={<RunningStatsSkeleton />}
+        key={`${isViewer ? "viewer" : "owner"}-${year}`}
+      >
+        <RunningStats
+          currentTime={now.getTime()}
+          isViewer={isViewer}
+          year={year}
+        />
       </Suspense>
     </DashboardShell>
   );

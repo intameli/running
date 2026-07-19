@@ -160,6 +160,15 @@ async function fetchActivities(
 }
 
 async function fetchRunningProfile(requestedYear?: number) {
+  const accessToken = await getAccessToken();
+
+  return fetchRunningProfileWithAccessToken(accessToken, requestedYear);
+}
+
+async function fetchRunningProfileWithAccessToken(
+  accessToken: string,
+  requestedYear?: number,
+) {
   const now = new Date();
   const currentYear = getBrisbaneYear(now);
   const year = requestedYear ?? currentYear;
@@ -177,7 +186,6 @@ async function fetchRunningProfile(requestedYear?: number) {
   const referenceDate =
     year === currentYear ? now : new Date(getYearStart(year + 1) - 1);
   const finalWeekEnd = buildWeeks(referenceDate, year).at(-1)?.end;
-  const accessToken = await getAccessToken();
   const activities = await fetchActivities(
     accessToken,
     Math.floor(getYearStart(year) / 1000) - 1,
@@ -192,3 +200,10 @@ export const getRunningProfile = unstable_cache(
   ["running-profile-by-year"],
   { revalidate: 300 },
 );
+
+export function getStravaViewerRunningProfile(
+  accessToken: string,
+  requestedYear?: number,
+) {
+  return fetchRunningProfileWithAccessToken(accessToken, requestedYear);
+}

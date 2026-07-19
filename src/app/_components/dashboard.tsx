@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+export function DashboardShell({
+  children,
+  description = "Progress toward a 1,000 km year, one 20 km week at a time.",
+  title = "Jacob's year in running",
+}: {
+  children: ReactNode;
+  description?: string;
+  title?: string;
+}) {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-3xl">
@@ -9,10 +17,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             Year in motion
           </p>
           <h1 className="text-4xl leading-tight text-white sm:text-5xl">
-            Jacob&apos;s year in running
+            {title}
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
-            Progress toward a 1,000 km year, one 20 km week at a time.
+            {description}
           </p>
         </header>
         {children}
