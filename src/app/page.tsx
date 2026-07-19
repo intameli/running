@@ -336,51 +336,58 @@ async function RunningStats({
 
 function AccountSwitcher({ isViewer }: { isViewer: boolean }) {
   return (
-    <section
+    <details
       aria-label="Strava account"
-      className="mb-8 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:flex sm:items-center sm:justify-between sm:gap-5"
+      className="group mb-8 rounded-lg border border-slate-800 bg-slate-900/60"
     >
-      <div>
-        <p className="text-lg text-white">
-          {isViewer ? "Viewing your runs" : "See your own progress"}
-        </p>
-        <p className="mt-1 max-w-xl font-sans text-sm leading-5 text-slate-400">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 whitespace-nowrap px-4 py-2.5 font-sans text-sm font-semibold text-slate-200 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 [&::-webkit-details-marker]:hidden">
+        <span>{isViewer ? "Viewing your runs" : "View my Strava stats"}</span>
+        <span
+          aria-hidden="true"
+          className="text-slate-500 transition-transform group-open:rotate-180"
+        >
+          ↓
+        </span>
+      </summary>
+
+      <div className="border-t border-slate-800 px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-5">
+        <p className="max-w-xl font-sans text-sm leading-5 text-slate-400">
           {isViewer
             ? "Your short-lived access token is encrypted in a browser-session cookie and is never saved to this app's database."
             : "Temporarily grant read-only access to your activities, including private activities. Nothing is added to this app's database."}
         </p>
-      </div>
 
-      <div className="mt-4 flex shrink-0 flex-wrap gap-3 sm:mt-0 sm:justify-end">
-        {isViewer ? (
-          <>
+        <div className="mt-3 flex shrink-0 flex-wrap gap-3 sm:mt-0 sm:justify-end">
+          {isViewer ? (
+            <>
+              <Link
+                className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 font-sans text-sm font-semibold text-slate-200 transition-colors hover:border-orange-400 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+                href="/api/strava/authorize"
+                prefetch={false}
+              >
+                Switch account
+              </Link>
+              <form action="/api/strava/disconnect" method="post">
+                <button
+                  className="inline-flex items-center justify-center rounded-lg bg-slate-200 px-4 py-2 font-sans text-sm font-semibold text-slate-950 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200"
+                  type="submit"
+                >
+                  Back to Jacob
+                </button>
+              </form>
+            </>
+          ) : (
             <Link
-              className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 font-sans text-sm font-semibold text-slate-200 transition-colors hover:border-orange-400 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+              className="inline-flex items-center justify-center rounded-lg bg-[#fc4c02] px-4 py-2 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#e34402] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               href="/api/strava/authorize"
               prefetch={false}
             >
-              Switch account
+              View my Strava stats
             </Link>
-            <form action="/api/strava/disconnect" method="post">
-              <button
-                className="inline-flex items-center justify-center rounded-lg bg-slate-200 px-4 py-2 font-sans text-sm font-semibold text-slate-950 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200"
-                type="submit"
-              >
-                Back to Jacob
-              </button>
-            </form>
-          </>
-        ) : (
-          <Link
-            className="inline-flex items-center justify-center rounded-lg bg-[#fc4c02] px-4 py-2 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#e34402] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-            href="/api/strava/authorize"
-            prefetch={false}
-          >
-            View my Strava stats
-          </Link>
-        )}
+          )}
+        </div>
       </div>
-    </section>
+    </details>
   );
 }
 
